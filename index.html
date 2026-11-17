@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>トレーニング分割診断</title>
+<meta name="description" content="目標・頻度・時間・経験・性格・回復力・過去のルーティンから、あなたに合うトレーニング分割法を10種類の中から診断します。">
+<meta property="og:title" content="トレーニング分割診断">
+<meta property="og:description" content="約4分の質問で、あなたに最適な分割法・週間スケジュール・メニュー例がわかります。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: 1カラムのウィザード。上部に進捗レール、結果は「処方箋」風のカードで構成 */
+:root{
+  --bg:#F2F3EF;
+  --surface:#FFFFFF;
+  --ink:#16191D;
+  --muted:#5D646C;
+  --line:#D9DCD4;
+  --accent:#C9411A;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#F7E3DA;
+  --good:#1E6B57;
+  --good-soft:#DDEEE8;
+  --warn:#9A6200;
+  --warn-soft:#F5EAD3;
+  --font-display:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+  --font-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417;--surface:#1B1E22;--ink:#ECEDEA;--muted:#A2A9B0;--line:#30353B;
+    --accent:#F0683F;--accent-ink:#16191D;--accent-soft:#3A2219;
+    --good:#6CC7A8;--good-soft:#16302A;--warn:#E3B356;--warn-soft:#352A14;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417;--surface:#1B1E22;--ink:#ECEDEA;--muted:#A2A9B0;--line:#30353B;
+  --accent:#F0683F;--accent-ink:#16191D;--accent-soft:#3A2219;
+  --good:#6CC7A8;--good-soft:#16302A;--warn:#E3B356;--warn-soft:#352A14;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:32px 20px 80px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-family:var(--font-display);font-weight:400;font-size:clamp(28px,5vw,40px);line-height:1.25;letter-spacing:.01em}
+h2{font-family:var(--font-display);font-weight:400;font-size:22px;line-height:1.4}
+h3{font-size:17px;font-weight:700}
+p{margin:0}
+.lead{color:var(--muted);max-width:62ch;margin-top:10px}
+header.top{display:grid;gap:6px;margin-bottom:24px}
+.kicker{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.08em}
+
+/* progress */
+.rail{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:20px 0 28px}
+.rail button{all:unset;cursor:pointer;display:grid;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
+.rail button[disabled]{cursor:default}
+.rail .bar{height:5px;border-radius:3px;background:var(--line)}
+.rail .on .bar{background:var(--accent)}
+.rail .cur{color:var(--ink);font-weight:700}
+.rail button:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px}
+@media (max-width:520px){.panel{padding:20px 16px}}
+.q{display:grid;gap:10px;padding:18px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0;padding-top:4px}
+.calfill{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.btn.small{font-size:13px;padding:7px 12px;font-weight:700}
+.calgrid{display:grid;grid-template-columns:auto repeat(7,minmax(40px,1fr));gap:5px;align-items:stretch}
+.calgrid .wk{font-size:11.5px;color:var(--muted);font-weight:700;writing-mode:vertical-rl;text-align:center;padding:0 2px}
+.calday{appearance:none;font:inherit;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 3px;min-height:72px;display:grid;align-content:start;gap:4px;cursor:pointer;text-align:center}
+.calday.on{background:var(--accent-soft);border-color:transparent}
+.calday.sel{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
+.calday:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.calday .cd{font-size:12px;font-weight:700;color:var(--muted)}
+.calday .cp{display:flex;flex-wrap:wrap;gap:2px;justify-content:center}
+.calday .cp i{font-style:normal;font-size:11.5px;font-weight:700;background:var(--surface);border-radius:4px;padding:0 3px;line-height:1.5}
+.calday .cp em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.calpal{margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:12px;display:grid;gap:10px}
+.calsel{font-weight:700;font-size:14px}
+.calnav{display:flex;gap:8px}
+.btn.ghost[disabled]{opacity:.4}
+.freqrows{display:grid;gap:6px;margin:10px 0 4px}
+.freqrows .row{display:grid;grid-template-columns:48px 1fr 56px;gap:10px;align-items:center;font-size:13.5px}
+.freqrows .track{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.freqrows .fill{height:100%;background:var(--accent);border-radius:4px}
+.freqrows .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.setwrap{overflow-x:auto}
+.settable{border-collapse:separate;border-spacing:6px;font-size:13.5px;margin-left:-6px}
+.settable th{font-weight:700;color:var(--muted);text-align:center;white-space:nowrap;font-size:12.5px}
+.settable tbody th{text-align:left;color:var(--ink);padding-right:6px}
+.settable th small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.setin{width:84px;font:inherit;font-size:16px;text-align:center;padding:8px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums}
+.setin:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.settotal{font-size:13px;color:var(--muted)}
+input.short{width:100%;max-width:420px;font:inherit;font-size:15px;padding:10px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+input.short:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.q label.t,.q .t{font-weight:700;font-size:15px}
+.q .hint{font-size:13px;color:var(--muted);margin-top:-6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer;line-height:1.4;transition:border-color .15s,background .15s}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg);font-weight:700}
+.chip:focus-visible,.btn:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip small{display:block;font-size:11.5px;opacity:.75;font-weight:400}
+.chips.days .chip{width:48px;padding:10px 0;text-align:center;font-weight:700;font-size:16px;border-radius:10px}
+.chips.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.chips.cards .chip{border-radius:10px;text-align:left;padding:10px 14px}
+textarea{width:100%;min-height:130px;font:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical}
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:22px;flex-wrap:wrap}
+.btn{appearance:none;border:0;font:inherit;font-weight:700;font-size:15px;padding:12px 22px;border-radius:10px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.err{color:var(--accent);font-size:14px;font-weight:700;min-height:1.5em}
+
+/* intro list */
+.splitlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:22px}
+.splitlist div{border-left:3px solid var(--accent);padding:4px 0 4px 12px}
+.splitlist b{display:block;font-size:14.5px}
+.splitlist span{font-size:13px;color:var(--muted);line-height:1.6;display:block}
+
+/* result */
+.result{display:grid;gap:20px}
+.hero{background:var(--ink);color:var(--bg);border-radius:14px;padding:28px;display:grid;gap:10px}
+.hero .kicker{color:var(--accent)}
+.hero h2{font-size:clamp(26px,5vw,36px);line-height:1.3}
+.hero .en{font-size:13px;letter-spacing:.12em;opacity:.7;text-transform:uppercase}
+.hero p{opacity:.88;max-width:60ch}
+.metrics{display:flex;flex-wrap:wrap;gap:22px;margin-top:8px}
+.metrics div{display:grid}
+.metrics b{font-family:var(--font-display);font-weight:400;font-size:26px;font-variant-numeric:tabular-nums;line-height:1.2}
+.metrics span{font-size:12px;opacity:.7}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px}
+@media (max-width:520px){.card,.hero{padding:20px 16px}}
+.card > h3{margin-bottom:14px}
+.reasons{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.reasons li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:15px}
+.tag{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:5px;white-space:nowrap;margin-top:3px}
+.tag.g{background:var(--good-soft);color:var(--good)}
+.tag.w{background:var(--warn-soft);color:var(--warn)}
+.week{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:6px;overflow-x:auto;padding-bottom:4px}
+.weekwrap{overflow-x:auto}
+.day{border-radius:10px;padding:10px 8px;min-height:84px;display:grid;align-content:start;gap:4px;border:1px solid var(--line)}
+.day .dn{font-size:12px;color:var(--muted);font-weight:700}
+.day .sn{font-size:14px;font-weight:700;line-height:1.4}
+.day.train{background:var(--accent-soft);border-color:transparent}
+.day.rest .sn{color:var(--muted);font-weight:500}
+.note{font-size:13.5px;color:var(--muted);margin-top:10px}
+.sessions{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.sess{border:1px solid var(--line);border-radius:10px;padding:14px}
+.sess h4{margin:0 0 8px;font-size:15px}
+.sess table{width:100%;border-collapse:collapse;font-size:13.5px}
+.sess td{padding:5px 0;border-top:1px dashed var(--line);vertical-align:top}
+.sess td.sr{text-align:right;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:8px}
+.main-mark{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:middle}
+.sub{font-size:11px;color:var(--warn);font-weight:700;margin-left:4px}
+.legend{font-size:12.5px;color:var(--muted);margin-top:10px}
+.rank{display:grid;gap:10px}
+.rank .row{display:grid;grid-template-columns:190px 1fr 40px;gap:12px;align-items:center;font-size:14px}
+@media (max-width:520px){.rank .row{grid-template-columns:110px 1fr 34px;font-size:13px}}
+.rank .track{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.rank .fill{height:100%;background:var(--muted);border-radius:5px}
+.rank .row.top .fill{background:var(--accent)}
+.rank .row.top{font-weight:700}
+.rank .v{text-align:right;font-variant-numeric:tabular-nums}
+.alt{display:grid;gap:8px}
+.cmp-sum{font-size:15px;margin-bottom:6px}
+.ans-h{font-size:13.5px;margin:18px 0 8px;color:var(--muted);font-weight:700}
+.ans-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ans-item{border-left:3px solid var(--good);background:var(--good-soft);border-radius:0 8px 8px 0;padding:10px 12px}
+.ans-item.alt{border-left-color:var(--warn);background:var(--warn-soft)}
+.ans-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ans-chip{font-weight:700;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 10px}
+.ans-chip.plain{font-weight:500;font-size:13px;color:var(--muted)}
+.ans-badge{font-size:11.5px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:5px;padding:2px 8px}
+.ans-str{font-size:12px;color:var(--muted);margin-left:auto}
+.ans-why{font-size:13.5px;margin-top:6px;line-height:1.65}
+.ans-same{display:flex;flex-wrap:wrap;gap:6px}
+.cmp-sum b{font-variant-numeric:tabular-nums}
+.cmp{width:100%;border-collapse:collapse;font-size:14px}
+.cmp th{font-size:12px;color:var(--muted);font-weight:700;text-align:left;padding:0 6px 8px 0;border-bottom:1px solid var(--line)}
+.cmp th.n,.cmp td.n{padding-left:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cmp td{padding:10px 6px 10px 0;border-bottom:1px dashed var(--line);vertical-align:top}
+.cmp td.lab{font-weight:700;white-space:nowrap}
+.cmp .why{display:block;font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px;line-height:1.6}
+.cmp td.d{font-weight:700}
+.cmp td.d.plus{color:var(--good)}
+.cmp td.d.minus{color:var(--warn)}
+.cmp tr.total td{border-bottom:0;border-top:2px solid var(--ink);font-weight:700}
+.cmpwrap{overflow-x:auto}
+.diffbar{display:inline-block;height:8px;border-radius:4px;vertical-align:middle;margin-left:6px}
+.diffbar.plus{background:var(--good)}.diffbar.minus{background:var(--warn)}
+.alt .why{font-size:14.5px}
+.ai{border:1.5px solid var(--accent)}
+.ai-out{white-space:pre-wrap;font-size:15px;margin-top:12px}
+.ai-out:empty{display:none}
+.row-actions{display:flex;gap:10px;flex-wrap:wrap}
+.disclaimer{font-size:12.5px;color:var(--muted)}
+.hidden{display:none !important}
+@media (prefers-reduced-motion:no-preference){
+  .step-anim{animation:fade .25s ease}
+  @keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="kicker">TRAINING SPLIT CHECK</span>
+    <h1>トレーニング分割診断</h1>
+    <p class="lead">体の目標、使える時間、経験、性格、過去の挫折パターンから、あなたが続けやすく成果が出やすい「週の組み方」を10種類の分割法の中から選びます。所要時間は約4分です。</p>
+  </header>
+
+  <nav class="rail" id="rail" aria-label="進捗"></nav>
+
+  <main id="app"></main>
+</div>
+
+<script>
+/* ============================================================
+   データ定義
+   ============================================================ */
+const SPLITS = {
+  fb:   {name:'全身法', en:'Full Body', desc:'毎回全身を鍛える組み方。各部位を週2〜3回刺激でき、1回休んでも鍛えない部位が出にくい。'},
+  fbul: {name:'全身＋上下ハイブリッド', en:'Full Body / Upper / Lower', desc:'全身の日と上半身・下半身の日を組み合わせる。週3〜4回でも各部位を週2回刺激できる。'},
+  ul:   {name:'上下分割', en:'Upper / Lower', desc:'上半身の日と下半身の日を交互に回す。頻度とボリュームのバランスが良い定番の組み方。'},
+  ppl:  {name:'プッシュ・プル・レッグ', en:'Push / Pull / Legs', desc:'押す筋肉・引く筋肉・脚の3日に分ける。週6回なら各部位を週2回、高ボリュームで鍛えられる。'},
+  ulppl:{name:'上下＋PPL', en:'Upper / Lower + PPL', desc:'週の前半は上下分割で重さを扱い、後半はPPLでボリュームを稼ぐ、週5〜6回向けの構成。'},
+  bro:  {name:'部位別分割', en:'Body Part Split', desc:'胸・背中・脚・肩・腕を日ごとに分け、1部位を徹底的に追い込む。ボディビルの伝統的な組み方。'},
+  arnold:{name:'アーノルドスプリット', en:'Chest & Back / Shoulders & Arms / Legs', desc:'「胸＋背中」「肩＋腕」「脚」の3日構成。胸と背中を同じ日に鍛えるため拮抗筋のスーパーセットが組め、パンプ感が強い。週6回で各部位を週2回。'},
+  ant3:{name:'非協働筋3分割', en:'Chest & Biceps / Back & Triceps / Shoulders & Legs', desc:'「胸＋二頭」「背中＋三頭」「肩＋脚」の3日構成。胸の日に二頭、背中の日に三頭のように、メイン部位の種目で使われない腕を組み合わせるため、腕を疲れていない状態で鍛えられる。'},
+  ant4:{name:'非協働筋4分割', en:'Chest & Biceps / Back & Triceps / Shoulders / Legs', desc:'「胸＋二頭」「背中＋三頭」「肩」「脚」の4日構成。非協働筋3分割から肩と脚を独立させ、それぞれに十分なボリュームを確保する。'},
+  glute:{name:'下半身重視分割', en:'Lower-Body Focus', desc:'お尻・脚を週2〜3回、上半身を週1〜2回。ヒップや脚のラインづくりを最優先する構成。'}
+};
+const FIT = {
+  fb:{1:10,2:10,3:9,4:5,5:2,6:1},
+  fbul:{3:9,4:7},
+  ul:{2:6,3:5,4:10,5:7,6:5},
+  ppl:{3:6,4:5,5:6,6:10},
+  ulppl:{5:10,6:7},
+  bro:{4:4,5:8,6:6},
+  glute:{3:8,4:9,5:8},
+  arnold:{3:6,4:5,5:5,6:10},
+  ant3:{3:7,4:5,5:5,6:9},
+  ant4:{4:9,5:6,6:5}
+};
+const FREQ_PER_MUSCLE = { // 週あたりの各部位刺激回数（目安）
+  fb:d=>d>=3?'3':String(d), fbul:()=>'2', ul:d=>d>=4?'2':(d===2?'1':'1.5'), ppl:d=>d>=6?'2':(d>=4?'1.5':'1'),
+  ulppl:()=>'2', bro:()=>'1',
+  arnold:d=>d>=6?'2':(d>=4?'1.5':'1'), ant3:d=>d>=6?'2':(d>=4?'1.5':'1'), ant4:d=>d>=5?'1〜1.5':'1', glute:()=>'下2〜3・上1〜2'
+};
+
+const QUESTIONS = [
+ { title:'基本情報', items:[
+   {id:'sex', t:'性別', type:'one', opts:[['male','男性'],['female','女性'],['other','回答しない']],
+    hint:'筋肉が成長する仕組みは共通なので、分割の選び方への影響は小さめです。'},
+   {id:'age', t:'年齢', type:'one', opts:[['u20','〜19歳'],['20','20代'],['30','30代'],['40','40代'],['50','50代'],['60','60歳以上']]}
+ ]},
+ { title:'目標と時間', items:[
+   {id:'goal', t:'目標とする体', type:'one', cls:'cards', opts:[
+     ['hyper','大きく厚い体','筋肥大・ボディビル寄り'],
+     ['lean','細マッチョ・引き締め','筋肉をつけつつシャープに'],
+     ['strength','とにかく強く','BIG3など重量を伸ばしたい'],
+     ['cut','体脂肪を落としたい','減量・ダイエット'],
+     ['glute','お尻・脚のライン','ヒップアップ・美脚'],
+     ['sport','競技で動ける体','パフォーマンス向上'],
+     ['health','健康・体力維持','無理なく長く続けたい']]},
+   {id:'days', t:'週に何回トレーニングできますか', type:'one', cls:'days', opts:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7']], hint:'「確実に行ける回数」で選ぶのがコツです。'},
+   {id:'time', t:'1回あたりのトレーニング時間', type:'one', opts:[['30','30分以内'],['45','30〜45分'],['60','45〜60分'],['90','60〜90分'],['120','90分以上']]},
+   {id:'prio', t:'特に鍛えたい部位（複数可）', type:'multi', opts:[['chest','胸'],['back','背中'],['shoulder','肩'],['arm','腕'],['legs','脚'],['glute','お尻'],['abs','お腹'],['none','特になし']]}
+ ]},
+ { title:'経験と性格', items:[
+   {id:'exp', t:'筋トレ歴', type:'one', opts:[['0','未経験'],['lt6m','半年未満'],['6m2y','半年〜2年'],['2y5y','2〜5年'],['5y','5年以上']]},
+   {id:'sport', t:'過去の競技歴（複数可）', type:'multi', opts:[['none','特になし'],...[['endurance','持久系（長距離・水泳など）'],['power','瞬発・パワー系（短距離・投擲など）'],['ball','球技'],['combat','格闘技・コンタクト系'],['art','体操・ダンス'],['bodybuild','ボディビル・フィジーク'],['other','その他']]]},
+   {id:'sportNow', t:'現在やっている競技（複数可）', type:'multi', opts:[['none','やっていない'],...[['endurance','持久系（長距離・水泳など）'],['power','瞬発・パワー系（短距離・投擲など）'],['ball','球技'],['combat','格闘技・コンタクト系'],['art','体操・ダンス'],['bodybuild','ボディビル・フィジーク'],['other','その他']]], hint:'部活・クラブ・チーム練習なども含みます。'},
+   {id:'sportName', t:'競技名', type:'short', show:a=>sportAny(a), placeholder:'例：サッカー、ブラジリアン柔術、メンズフィジーク'},
+   {id:'sportFreq', t:'競技の練習頻度（週あたり）', type:'one', show:a=>sportActive(a), opts:[['low','週1〜2回'],['mid','週3〜4回'],['high','週5回以上']], hint:'試合・練習を含めた合計の回数です（ボディビル・フィジークの筋トレは含めません）。'},
+   {id:'variety', t:'同じメニューの繰り返しは？', type:'one', opts:[['bored','すぐ飽きる'],['steady','同じでも平気・コツコツ型'],['mid','どちらでもない']]},
+   {id:'sched', t:'予定の立ち方', type:'one', opts:[['regular','曜日がほぼ固定できる'],['irregular','急な予定でよく崩れる']]},
+   {id:'synergy', t:'協働筋の疲労をどう感じますか', type:'one', cls:'cards', opts:[
+     ['ok','気にならない','疲れた状態で追い込むのもアリ'],
+     ['ng','気になる','各部位を万全の状態で鍛えたい'],
+     ['mid','わからない','まだ意識したことがない']],
+    hint:'例：PPLのプッシュの日は、胸の種目の後に三頭を鍛えるため、三頭はすでに疲れていて扱える重量が落ちます。'},
+   {id:'focus', t:'好きな鍛え方', type:'one', opts:[['deep','1部位をとことん追い込みたい'],['balanced','全身をまんべんなく'],['mid','こだわりなし']]}
+ ]},
+ { title:'回復と過去の分割', items:[
+   {id:'usedSplit', t:'過去または現在に使っていた分割法（複数可）', type:'multi', opts:[['none','組んだことがない'],['fb','全身法'],['fbul','全身＋上下'],['ul','上下分割'],['ppl','PPL'],['ulppl','上下＋PPL'],['bro','部位別分割'],['arnold','アーノルドスプリット'],['ant3','非協働筋3分割'],['ant4','非協働筋4分割'],['glute','下半身重視'],['other','その他']]},
+   {id:'cal', t:'直近（または今）のルーティンを2週間分入力してください', type:'cal', show:a=>usedAny(a), hint:'日をタップしてから、その日に鍛えた部位を選びます。何も選ばない日は休みになります。下のボタンで、選んだ分割法の典型例を入れてから修正することもできます。'},
+   {id:'complaint', t:'その分割で不満に感じた点（複数可）', type:'multi', show:a=>usedAny(a), opts:[['nothing','特に不満はなかった'],['lowfreq','1部位の頻度が少なく伸び悩んだ'],['longsess','1回が長すぎた'],['fatigue','疲労がたまり回復が追いつかなかった'],['rotation','予定が崩れてローテーションが乱れた'],['weak','後回しになる部位があった'],['synergy','協働筋が疲れて重量が落ちた'],['legday','脚の日がきつくて避けがちだった'],['boring','毎回同じで飽きた']]},
+   {id:'recPast', t:'その分割で、次に同じ部位を鍛える日までに疲労（筋肉痛・だるさ）は抜けていましたか', type:'one', show:a=>usedAny(a), opts:[['full','抜けていた'],['border','ギリギリ抜けていた'],['not','抜けないことが多かった']]},
+   {id:'sets', t:'その分割での1回あたりの平均セット数', type:'sets', show:a=>usedAny(a), hint:'分かる範囲で入力してください（ウォームアップは除く）。空欄は0として扱います。コンパウンド＝複数の関節が動く種目（スクワット・ベンチプレス・懸垂など）、アイソレーション＝1つの関節だけが動く種目（サイドレイズ・アームカール・レッグエクステンションなど）。'},
+   {id:'recSore', t:'翌日以降に疲れが残りやすい部位（複数可）', type:'multi', opts:[['none','特になし'],['legs','脚'],['back','背中・腰'],['chestShoulder','胸・肩'],['arms','腕']]},
+   {id:'recConsec', t:'2日連続でトレーニングしたときの調子', type:'one', opts:[['fine','問題ない'],['drop','2日目は重量や集中力が落ちる'],['hard','連続はつらい・やったことがない']]},
+   {id:'restPref', t:'調子がいい休養の取り方', type:'one', opts:[['daily','毎日でも平気'],['one','1日空けたい'],['two','2日以上空けたい']]},
+   {id:'sleep', t:'平均睡眠時間', type:'one', opts:[['lt6','6時間未満'],['6to7','6〜7時間'],['7plus','7時間以上']]},
+   {id:'work', t:'仕事・日常の身体負荷', type:'one', opts:[['desk','デスクワーク中心'],['stand','立ち仕事・歩き回る'],['physical','肉体労働']]}
+ ]},
+ { title:'ヒアリング', items:[
+   {id:'injury', t:'痛みや怪我のある部位（複数可）', type:'multi', opts:[['none','なし'],['shoulder','肩'],['back','腰'],['knee','膝'],['elbow','肘・手首']], hint:'該当種目を負担の少ない代替種目に置き換えます。'},
+   {id:'quit', t:'以前トレーニングが続かなかった理由（複数可）', type:'multi', opts:[['never','挫折経験はない'],['time','時間が取れなくなった'],['bored','飽きた'],['fatigue','疲れが抜けなかった'],['noresult','効果を感じなかった'],['hurt','怪我をした']]},
+   {id:'memo', t:'その他のヒアリング内容（任意）', type:'text', hint:'過去のカウンセリングメモ、気になること、使える器具（自宅・ジム）などを自由に。AIコメントで考慮します。'}
+ ]}
+];
+const REQUIRED = ['usedSplit','complaint','recPast','recSore','recConsec','restPref','sex','age','goal','days','time','prio','exp','sport','sportNow','sportFreq','variety','sched','synergy','focus','injury','quit','sleep','work'];
+const usedAny = a => (a.usedSplit||[]).some(x=>x!=='none');
+const SET_KEYS = [['cf','cm','cb'],['isf','ism','isb']];
+function setStats(a){
+  const v=a.sets||{}; const n=k=>Math.max(0,Math.min(99,Number(v[k])||0));
+  const comp=n('cf')+n('cm')+n('cb'), iso=n('isf')+n('ism')+n('isb');
+  const free=n('cf')+n('isf'), mach=n('cm')+n('ism'), bw=n('cb')+n('isb'), total=comp+iso;
+  return {comp,iso,free,mach,bw,total, compR: total?comp/total:0, freeR: total?free/total:0};
+}
+function setsText(a){
+  const t=setStats(a); if(!t.total) return '未入力';
+  return `合計${t.total}セット（コンパウンド${t.comp}・アイソレーション${t.iso}／フリーウエイト${t.free}・マシン/ケーブル${t.mach}・自重${t.bw}）`;
+}
+const PARTS = [['chest','胸','胸'],['back','背中','背'],['shoulder','肩','肩'],['bi','二頭','二'],['tri','三頭','三'],['legs','脚','脚'],['glute','お尻','尻'],['abs','腹','腹']];
+const PART_NAME = Object.fromEntries(PARTS.map(p=>[p[0],p[1]]));
+const SESS_PARTS = {fbA:['chest','back','shoulder','legs'],fbB:['chest','back','shoulder','legs'],fbC:['chest','back','legs','glute'],
+  upA:['chest','back','shoulder','bi','tri'],upB:['chest','back','shoulder','bi','tri'],upC:['chest','back','shoulder','bi','tri'],
+  loA:['legs','glute','abs'],loB:['legs','glute','abs'],loC:['legs','glute','abs'],push:['chest','shoulder','tri'],pull:['back','bi'],legs:['legs','glute'],
+  chest:['chest'],back:['back'],shoulder:['shoulder'],arms:['bi','tri'],chestTri:['chest','tri'],backBi:['back','bi'],shoulderArm:['shoulder','bi','tri'],
+  chestBack:['chest','back'],arnSA:['shoulder','bi','tri'],chestBi:['chest','bi'],backTri:['back','tri'],shoulderLegs:['shoulder','legs','glute'],
+  gluteA:['glute','legs'],gluteB:['glute','legs'],upGlute:['shoulder','back','glute'],core:['glute','abs'],weak:['shoulder','bi','tri']};
+const TYPICAL_DAYS = {fb:3,fbul:3,ul:4,ppl:6,ulppl:5,bro:5,arnold:6,ant3:3,ant4:4,glute:4};
+function dayName(i){ return `第${i<7?1:2}週${WD[i%7]}曜`; }
+function calStats(a){
+  const days=(a.cal||[]).slice(0,14); while(days.length<14) days.push([]);
+  const D=days.map(x=>x||[]);
+  const trained=D.filter(x=>x.length).length; if(!trained) return null;
+  const freq={}; PARTS.forEach(([k])=>freq[k]=D.filter(x=>x.includes(k)).length/2);
+  let maxRun=0,run=0; D.forEach(x=>{ run=x.length?run+1:0; maxRun=Math.max(maxRun,run); });
+  const issues=[];
+  const major=['chest','back','shoulder','legs','glute'];
+  const seen=new Set();
+  for(let i=0;i<13;i++){
+    major.forEach(k=>{ if(D[i].includes(k)&&D[i+1].includes(k)&&!seen.has('s'+k)){ seen.add('s'+k); issues.push({kind:'same',text:`${PART_NAME[k]}を${dayName(i)}と翌日に続けて鍛えていました。回復が間に合わず、2日目の質が落ちやすい組み方です。`}); } });
+    const SYN=[['chest','shoulder'],['chest','tri'],['shoulder','chest'],['shoulder','tri'],['back','bi'],['bi','back'],['tri','chest'],['tri','shoulder']];
+    SYN.forEach(([x,y])=>{ if(D[i].includes(x)&&!D[i].includes(y)&&D[i+1].includes(y)&&!D[i+1].includes(x)&&!seen.has('y'+x+y)){ seen.add('y'+x+y); issues.push({kind:'syn',text:`${dayName(i)}に${PART_NAME[x]}、翌日に${PART_NAME[y]}を鍛えていました。${PART_NAME[x]}の種目で${PART_NAME[y]}も使うため、${PART_NAME[y]}が疲れた状態だった可能性があります。`}); } });
+  }
+  major.forEach(k=>{ if(freq[k]<=0.5) issues.push({kind:'low',text:`${PART_NAME[k]}は2週間で${freq[k]*2}回でした。成長には週1〜2回以上が目安です。`}); });
+  if(maxRun>=4) issues.push({kind:'run',text:`最大${maxRun}日連続でトレーニングしていました。連続日が長いと、部位を変えても全身の疲労がたまりやすくなります。`});
+  const majorAvg = major.slice(0,4).reduce((t,k)=>t+freq[k],0)/4;
+  return {trained, perWeek:trained/2, freq, maxRun, issues, majorAvg};
+}
+function calText(a){
+  const D=(a.cal||[]); const out=[];
+  for(let i=0;i<14;i++){ const x=D[i]||[]; out.push(`${dayName(i)}：${x.length?x.map(k=>PART_NAME[k]).join('・'):'休み'}`); }
+  return out.join(' / ');
+}
+const sportAny = a => (a.sportNow||[]).some(x=>x!=='none');
+const sportActive = a => (a.sportNow||[]).some(x=>x!=='none' && x!=='bodybuild'); // 筋トレ以外の練習がある競技
+const bbNow = a => (a.sportNow||[]).includes('bodybuild');
+const isVisible = it => !it.show || it.show(state.a);
+const isRequired = it => REQUIRED.includes(it.id) && isVisible(it);
+
+/* ============================================================
+   スコアリング
+   ============================================================ */
+function evaluate(a){
+  const d = Math.min(Number(a.days),6);
+  const contrib = {}; Object.keys(SPLITS).forEach(s=>contrib[s]=[]);
+  let ANS='';
+  const ans = (id,v) => { ANS = ansLabel(id, v===undefined?a[id]:v); };
+  const add = (map, pos, neg, label) => {
+    for(const [s,v] of Object.entries(map)){ if(!v) continue;
+      contrib[s].push({v, text: v>0?pos:(neg||pos), label, ans:ANS}); }
+  };
+  // 1. 頻度との相性
+  const eligible = Object.keys(SPLITS).filter(s=>FIT[s][d]!==undefined);
+  eligible.forEach(s=>{
+    const f = FIT[s][d];
+    contrib[s].push({v:f, label:'頻度', base:true, ans:`週${a.days}回`,
+      text: f>=8 ? `週${a.days}回という頻度にぴったり合う組み方で、各部位を無理なく回せる`
+          : f>=6 ? `週${a.days}回でも成立するが、最も効率的な頻度ではない`
+          : `週${a.days}回だと各部位の刺激回数か休養のどちらかが偏りやすい`});
+  });
+  // 2. 筋トレ歴
+  const E = {
+    '0':   [{fb:4,fbul:2,ul:1,ppl:-2,ulppl:-3,bro:-5,arnold:-4,ant3:-3,ant4:-4},'経験が浅い時期は、基本種目を週に何度も練習できる分割ほどフォームと筋力が早く伸びる','経験が浅いうちは1部位を週1回しか鍛えない分割だと練習量が足りず、上達が遅れやすい'],
+    'lt6m':[{fb:4,fbul:2,ul:1,ppl:-2,ulppl:-3,bro:-5,arnold:-4,ant3:-3,ant4:-4},'経験が浅い時期は、基本種目を週に何度も練習できる分割ほどフォームと筋力が早く伸びる','経験が浅いうちは1部位を週1回しか鍛えない分割だと練習量が足りず、上達が遅れやすい'],
+    '6m2y':[{fb:1,fbul:1,ul:2,ppl:1},'中級に入る時期なので、各部位を週2回刺激しつつ1回のボリュームも増やせる組み方が合う'],
+    '2y5y':[{fb:-1,ul:1,ppl:2,ulppl:2,bro:1,arnold:2,ant3:1,ant4:1},'経験2年以上なので、1回あたりのボリュームを増やして部位ごとに追い込む余地がある','経験を積んだ今は、全身法だと1部位あたりのボリュームが不足しやすい'],
+    '5y':  [{fb:-2,ul:1,ppl:2,ulppl:2,bro:2,arnold:2,ant3:1,ant4:2},'経験5年以上なので、高ボリュームで部位ごとに追い込む分割を使いこなせる','上級者には全身法だと1部位あたりのボリュームが不足しやすい']
+  }[a.exp];
+  ans('exp'); add(E[0],E[1],E[2],'経験');
+  // 3. 時間
+  const T = {
+    '30':[{fb:-2,fbul:-1,ul:1,ppl:1,bro:1,ant3:1,ant4:2,arnold:-2},'1回30分以内なら、その日に鍛える部位を絞るか、協働筋が重ならない部位同士をスーパーセットで組むと質を保てる','1回30分以内では、大きな部位を複数まとめて十分なボリュームで回すのが難しい'],
+    '45':[{fb:-1,ul:1,ant3:1,ant4:1,arnold:-1},'30〜45分なら、上半身か下半身のどちらかに絞ると密度を保てる','30〜45分で全身を回すと、1部位あたりの種目数が少なくなる'],
+    '60':[{},''],
+    '90':[{fb:1,fbul:1,ul:1,arnold:1},'60〜90分あれば、1回で複数部位をしっかり鍛えられる'],
+    '120':[{fb:1,bro:1,ppl:1,arnold:2},'90分以上確保できるので、1回のボリュームを大きく取れる']
+  }[a.time];
+  ans('time'); add(T[0],T[1],T[2],'時間');
+  // 4. 目標
+  const G = {
+    hyper:[{ppl:2,ulppl:2,bro:2,ul:1,arnold:2,ant3:2,ant4:2},'筋肥大が目的なので、部位ごとのボリュームを確保しやすい分割を優先した'],
+    lean:[{ul:2,fb:1,fbul:1,ppl:1,ant3:1},'引き締まった体づくりには、全身をバランスよく週2回以上刺激する構成が効率的'],
+    strength:[{ul:3,fb:2,fbul:2,bro:-3,arnold:-1,ant3:-1,ant4:-2},'筋力向上には、スクワットやベンチプレスなどのメイン種目を週2回以上練習できる構成が有利','筋力を伸ばしたい場合、メイン種目の練習が週1回では少ない'],
+    cut:[{fb:2,fbul:2,ul:1,bro:-2,arnold:-1,ant4:-1},'減量中は大きな筋肉を高頻度で動かせて、疲労も管理しやすい構成が向く','減量中は回復力が落ちるため、1部位を追い込む高ボリューム分割は負担が大きい'],
+    glute:[{glute:7,ul:1},'お尻・脚のラインづくりが目標なので、下半身を週2〜3回鍛える構成を優先した'],
+    sport:[{fb:2,ul:3,fbul:1,bro:-4,ppl:-1,arnold:-3,ant3:-2,ant4:-3},'競技力向上には、全身の連動と筋力・パワーを週2回以上鍛える構成が合う','部位別のボディビル型分割は、競技の動きにつながりにくい'],
+    health:[{fb:3,fbul:1,ul:1,bro:-3,ulppl:-2,arnold:-3,ant3:-2,ant4:-2},'健康・体力維持には、全身を少ない回数で無理なく動かせる構成が続けやすい','健康維持が目的なら、ここまで細かく分ける必要は少ない']
+  }[a.goal];
+  ans('goal'); add(G[0],G[1],G[2],'目標');
+  // 下半身重視の対象判定
+  const prio = a.prio||[];
+  const lowerPrio = prio.includes('glute')||prio.includes('legs');
+  if(a.goal!=='glute'){
+    ans('prio');
+    if(lowerPrio) add({glute:2},'お尻・脚を特に鍛えたい希望があるため、下半身の頻度を上げる構成も有力','','部位');
+    else add({glute:-6},'','下半身を優先したい希望がないため、下半身重視の構成は合わない','目標');
+  }
+  if(prio.includes('arm')){ ans('prio'); } if(prio.includes('arm')) add({ant3:1,ant4:1},'腕を伸ばしたいので、腕を疲れていない状態で鍛えられる非協働筋の組み合わせが有利','','部位');
+  const upperCount = ['chest','back','shoulder','arm'].filter(x=>prio.includes(x)).length;
+  if(upperCount>=2){ ans('prio'); } if(upperCount>=2) add({ppl:1,ulppl:1,bro:1,arnold:1,ant3:1,ant4:1},'上半身の複数部位を伸ばしたいので、上半身を細かく分けて鍛える構成が合う','','部位');
+  // 5. 年齢
+  const A = {
+    u20:[{fb:1,ul:1},'10代は全身をバランスよく鍛えて土台を作る時期'],
+    '40':[{bro:-1},'','40代以降は回復に時間がかかるため、1部位に疲労を集中させすぎない方がよい'],
+    '50':[{fb:1,ul:1,bro:-2,ppl:-1,ulppl:-1,arnold:-2,ant3:-1,ant4:-1},'50代以降は回復に時間がかかるため、1回の負担を分散しやすい構成が合う','50代以降は関節や回復への配慮が必要で、高頻度・高ボリュームの分割は負担が大きい'],
+    '60':[{fb:2,fbul:1,ul:1,bro:-3,ppl:-2,ulppl:-2,arnold:-3,ant3:-2,ant4:-2},'60歳以上は全身をまんべんなく動かし、休養日をしっかり挟める構成が安全','60歳以上で高頻度・高ボリュームの分割は回復が追いつきにくい']
+  }[a.age];
+  ans('age'); if(A) add(A[0],A[1],A[2],'年齢');
+  // 6. 競技歴
+  if(sportActive(a)){
+    const nm = a.sportName ? `（${a.sportName}）` : '';
+    const SF = {
+      low:[{fb:1,ul:1,bro:-2,ulppl:-1,arnold:-1,ant4:-1},`競技練習${nm}が週1〜2回あるため、筋トレは疲労をためにくい構成が両立しやすい`,`競技練習${nm}と並行するため、高ボリュームの分割は疲労が残りやすい`],
+      mid:[{fb:2,ul:2,ppl:-1,ulppl:-2,bro:-4,arnold:-3,ant3:-2,ant4:-3},`競技練習${nm}が週3〜4回あるため、疲労をためにくい全身型や上下型が両立しやすい`,`競技練習${nm}が週3〜4回あると、高頻度・高ボリュームの分割は練習の質を落としやすい`],
+      high:[{fb:3,ul:2,fbul:1,ppl:-2,ulppl:-3,bro:-5,arnold:-4,ant3:-3,ant4:-4},`競技練習${nm}が週5回以上あるため、少ない回数で全身を鍛える構成が最も両立しやすい`,`競技練習${nm}が週5回以上あると、高頻度・高ボリュームの分割は回復が追いつかない`]
+    }[a.sportFreq];
+    ANS = `現在の競技：${a.sportName||ansLabel('sportNow',a.sportNow).replace('現在の競技：','')}（${ansLabel('sportFreq',a.sportFreq).replace('競技の練習頻度：','')}）`;
+    if(SF) add(SF[0],SF[1],SF[2],'現在の競技');
+  }
+  if(bbNow(a)){
+    ANS='現在の競技：ボディビル・フィジーク'+(a.sportName?`（${a.sportName}）`:'');
+    add({bro:2,arnold:2,ppl:1,ulppl:1,ant3:1,ant4:2,fb:-2,fbul:-1,glute:-1},'ボディビル・フィジークの競技者として、部位ごとに十分なボリュームで仕上げられる分割が合う','ボディビル・フィジークの競技者には、1部位あたりのボリュームが限られる構成は物足りない','現在の競技');
+  }
+  const hist = new Set([...(a.sport||[]),...(a.sportNow||[])]);
+  ANS='競技歴：'+[...hist].filter(x=>x!=='none').map(x=>ansLabel('sport',x).replace('競技歴：','')).join('、');
+  if(['power','ball','combat'].some(x=>hist.has(x))) add({ul:1,fbul:1},'瞬発・コンタクト系の競技経験があり、高重量のメイン種目を扱う下地がある','','競技歴');
+  if(hist.has('bodybuild') && !bbNow(a)) add({bro:1,arnold:1,ppl:1,ulppl:1,ant4:1},'ボディビル・フィジークの競技経験があり、部位ごとに追い込む分割を使いこなせる','','競技歴');
+  if(['endurance','art'].some(x=>hist.has(x))) add({fb:1},'持久系・体操系の競技経験があり、全身を連動させる動きに慣れている','','競技歴');
+  ans('synergy');
+  if(a.synergy==='ng') add({ant3:2,ant4:2,arnold:2,bro:1,ppl:-2,ulppl:-1,ul:-1},'協働筋が疲れた状態で鍛えたくないため、胸の日に二頭・背中の日に三頭のように、疲労がかぶらない組み合わせが合う','胸の後に三頭のように協働筋が疲れた状態で鍛える日があり、好みに合いにくい','協働筋');
+  if(a.synergy==='ok') add({ppl:2,ulppl:1,ul:1,bro:1,ant3:-1,ant4:-1},'協働筋が疲れた状態でも追い込みとして活かせるので、押す日・引く日でまとめる構成が効率的','協働筋の事前疲労を気にしないなら、非協働筋で組み合わせるメリットは小さい','協働筋');
+  // 7. 性格
+  ans('variety');
+  if(a.variety==='bored') add({ppl:1,ulppl:2,bro:1,fb:-1,arnold:1,ant3:1,ant4:1},'飽きやすい性格なので、日ごとにテーマが変わる構成のほうが新鮮さを保てる','飽きやすい性格だと、毎回似たメニューになる全身法は単調に感じやすい','性格');
+  if(a.variety==='steady') add({fb:1,ul:1},'同じメニューの繰り返しが苦にならないので、決まった種目で記録を伸ばす構成が向く','','性格');
+  ans('sched');
+  if(a.sched==='irregular') add({fb:3,fbul:1,ppl:-2,ulppl:-3,bro:-3,arnold:-2,ant3:-2,ant4:-3},'予定が崩れやすいので、1回休んでも全身をカバーできる構成が安全','予定が崩れやすいと、1回休むだけで「今週鍛えていない部位」が出やすい','生活');
+  if(a.sched==='regular') add({ppl:1,ulppl:1,bro:1,arnold:1,ant4:1},'曜日を固定できるので、ローテーションが崩れにくい','','生活');
+  ans('focus');
+  if(a.focus==='deep') add({bro:3,ppl:1,ulppl:1,arnold:1,ant3:2,ant4:2},'1部位をとことん追い込みたいタイプなので、その日の対象を絞る分割が満足度が高い','','性格');
+  if(a.focus==='balanced') add({fb:2,ul:1,fbul:1},'全身をまんべんなく鍛えたいタイプなので、毎回広く刺激できる構成が合う','','性格');
+  // 8. 回復要因
+  const lowRecovery = a.sleep==='lt6' || a.work==='physical';
+  if(a.sleep==='lt6') ANS=ansLabel('sleep',a.sleep)+(a.work==='physical'?'／'+ansLabel('work',a.work):''); else if(a.work==='physical') ANS=ansLabel('work',a.work);
+  if(lowRecovery) add({fb:1,ppl:-1,ulppl:-1,bro:-1,arnold:-1,ant3:-1,ant4:-1},'睡眠や仕事の負担で回復力が限られるため、1回の負担を抑えた構成が合う','睡眠や仕事の負担を考えると、高ボリュームの分割は疲労が抜けにくい','回復');
+  // 8b. 疲労回復
+  const used = usedAny(a);
+  if(used && a.recPast){
+    ans('recPast');
+    if(a.recPast==='full') add({bro:1,ppl:1,ulppl:1,arnold:1,ant4:1},'過去の分割で、次の同じ部位の日までに疲労が抜けていたので、量の多い分割にも対応できる','','回復');
+    if(a.recPast==='not') add({fb:1,ul:1,fbul:1,bro:-1,ppl:-1,ulppl:-1,arnold:-1},'過去の分割で疲労が抜けないことが多かったため、1回の負担を分散しやすい構成を選んだ','過去の分割で疲労が抜けないことが多かったため、1回に追い込む量が多い構成は避けた','回復');
+  }
+  const st = setStats(a);
+  if(used && st.total>0){
+    ANS = `過去のセット数：1回${st.total}セット`;
+    if(a.recPast==='not' && st.total>=22) add({fb:1,ul:1,fbul:1,bro:-1,arnold:-2,ppl:-1,ulppl:-1},`過去は1回${st.total}セットで疲労が抜けなかったため、1回の量を分散しやすい構成を選んだ`,`過去は1回${st.total}セットで疲労が抜けなかったため、1回にまとめて量をこなす構成は避けた`,'回復');
+    if(a.recPast==='full' && st.total>=22) add({bro:1,ppl:1,ulppl:1,arnold:1},`過去に1回${st.total}セットこなしても疲労が抜けていたので、高ボリュームの分割にも対応できる`,'','回復');
+    if(a.recPast==='not' && st.compR>=0.6 && st.freeR>=0.6){
+      ANS = `過去のセット構成：コンパウンド・フリーウエイト中心`;
+      add({fb:-1,fbul:-1},'','コンパウンドのフリーウエイト中心で疲労が抜けなかったため、重い多関節種目が毎回入る構成は全身の疲労がたまりやすい','回復');
+    }
+  }
+  const sore = a.recSore||[];
+  if(sore.includes('legs')){ ans('recSore','legs'); add({ul:1,fb:1,bro:-1,arnold:-1,ant4:-1,glute:-1},'脚に疲れが残りやすいので、脚の量を複数日に分けられる構成が合う','脚に疲れが残りやすいので、脚を1日にまとめて追い込む構成は負担が大きい','回復'); }
+  ans('recConsec');
+  if(a.recConsec==='fine') add({ppl:1,ulppl:1,bro:1},'連続日でも調子が落ちないので、連続してトレーニングする分割も組みやすい','','回復');
+  if(a.recConsec==='drop') add({ppl:-1,ulppl:-1},'','2日目に調子が落ちやすいので、連続日が多くなる分割は不利','回復');
+  if(a.recConsec==='hard') add({fb:1,fbul:1,ppl:-2,ulppl:-2,bro:-1,arnold:-1,ant3:-1,ant4:-1},'連続日がつらいので、1日おきでも成立する回数の少ない構成が合う','連続日がつらいので、連続日が必要になる回数の多い分割は不利','回復');
+  ans('restPref');
+  if(a.restPref==='daily') add({ppl:1,ulppl:1,bro:1,arnold:1},'休養日が少なくても調子が落ちないので、回数の多い分割にも対応できる','','回復');
+  if(a.restPref==='two') add({fb:2,fbul:1,ppl:-2,ulppl:-2,bro:-2,arnold:-2,ant3:-1,ant4:-1},'2日以上空けたいタイプなので、少ない回数で全身を鍛える構成が合う','2日以上空けたいタイプには、回数の多い分割は休養が足りない','回復');
+  const cs = used ? calStats(a) : null;
+  if(cs && cs.maxRun>=4 && a.recPast==='not'){ ANS=`過去のルーティン：最大${cs.maxRun}日連続`; add({fb:1,fbul:1,ul:1,ppl:-1,ulppl:-1,bro:-1},'過去のルーティンは連続日が長く疲労が抜けなかったため、休養日を挟みやすい構成を選んだ','過去のルーティンは連続日が長く疲労が抜けなかったため、連続日が多くなる分割は避けた','回復'); }
+  if(cs && cs.majorAvg<=1 && (a.complaint||[]).some(x=>x==='lowfreq')){ ANS='過去のルーティン：主要部位が週1回以下'; add({ul:1,ppl:1,ulppl:1,fbul:1},'過去のルーティンでは主要部位が週1回以下だったため、週2回刺激できる構成で伸び悩みを打開する','',''+'回復'); }
+  // 9. 挫折パターン
+  const q = a.quit||[];
+  if(q.includes('time')){ ans('quit','time'); } if(q.includes('time')) add({fb:1,ul:1,bro:-1},'以前「時間が取れない」で中断した経験から、回数が減っても成立する構成を選んだ','以前「時間が取れない」で中断した経験があり、回数が減ると崩れる分割はリスクがある','過去');
+  if(q.includes('bored')){ ans('quit','bored'); } if(q.includes('bored')) add({ulppl:1,ppl:1,arnold:1,ant3:1},'以前「飽きた」で中断した経験から、変化のある構成を加点した','','過去');
+  if(q.includes('fatigue')){ ans('quit','fatigue'); } if(q.includes('fatigue')) add({fb:1,bro:-1,ulppl:-1,ppl:-1,arnold:-1},'以前「疲れが抜けなかった」経験から、疲労を分散できる構成を選んだ','以前「疲れが抜けなかった」経験があり、高ボリュームの分割は再発しやすい','過去');
+  if(q.includes('noresult')){ ans('quit','noresult'); } if(q.includes('noresult')) add({ul:1,ppl:1,fbul:1},'以前「効果を感じなかった」経験から、各部位を週2回刺激して成長を早める構成を加点した','','過去');
+  if(q.includes('hurt')){ ans('quit','hurt'); } if(q.includes('hurt')) add({fb:1,ul:1,bro:-1},'以前の怪我の経験から、1回の負担が1部位に集中しない構成が安全','以前の怪我の経験を考えると、1部位に負担を集中させる分割は慎重に','過去');
+  // 10. 過去・現在の分割への不満
+  const usedS = (a.usedSplit||[]).filter(x=>SPLITS[x]);
+  const comp = (a.complaint||[]);
+  if(usedS.length && comp.length){
+    usedS.forEach(x=>{
+      ANS = '使っていた分割：'+SPLITS[x].name;
+      if(comp.includes('nothing')) add({[x]:2},`以前${SPLITS[x].name}で特に不満なく続けられた実績がある`,'','経験');
+      else add({[x]:-2},'',`以前使っていた${SPLITS[x].name}に不満があったため、同じ組み方は優先度を下げた`,'経験');
+    });
+  }
+  const CP = {
+    lowfreq:[{bro:-2,arnold:-1,ant3:-1,ant4:-2,ul:1,ppl:1,ulppl:1,fbul:1,fb:1},'「1部位の頻度が少なく伸び悩んだ」ため、各部位を週2回以上刺激できる構成を優先した','「1部位の頻度が少なく伸び悩んだ」不満があり、各部位が週1回になりやすい組み方は避けた'],
+    longsess:[{fb:-2,fbul:-1,arnold:-1,bro:1,ant4:1,ppl:1,ul:1},'「1回が長すぎた」不満から、1日に鍛える部位を絞って時間を短くできる構成を選んだ','「1回が長すぎた」不満があり、1回に鍛える部位が多い組み方は避けた'],
+    fatigue:[{ppl:-1,ulppl:-1,bro:-1,arnold:-1,fb:1,ul:1},'「疲労がたまった」不満から、疲労を分散しやすい構成を選んだ','「疲労がたまった」不満があり、高ボリュームの組み方は避けた'],
+    rotation:[{fb:2,ppl:-1,ulppl:-2,bro:-2,ant4:-1,arnold:-1},'「ローテーションが乱れた」不満から、順番が崩れても成立する構成を選んだ','「ローテーションが乱れた」不満があり、順番が崩れると鍛えない部位が出る組み方は避けた'],
+    weak:[{ulppl:1,bro:1,ant4:1,ul:1,fb:-1},'「後回しになる部位があった」不満から、各部位に専用の時間を確保しやすい構成を選んだ','「後回しになる部位があった」不満があり、全身を1回で回す組み方は後半の種目が手薄になりやすい'],
+    synergy:[{ant3:2,ant4:2,arnold:1,ppl:-2,ul:-1},'「協働筋が疲れて重量が落ちた」不満から、協働筋が重ならない非協働筋の組み合わせを優先した','「協働筋が疲れて重量が落ちた」不満があり、胸の後に三頭のような組み方は避けた'],
+    legday:[{fb:1,ul:1,ant3:1,ppl:-1,bro:-1,arnold:-1,ant4:-1},'「脚の日がきつくて避けがちだった」ため、脚のメニューを複数日に分散できる構成を選んだ','「脚の日がきつくて避けがちだった」不満があり、脚を1日にまとめる組み方は避けた'],
+    boring:[{fb:-1,ppl:1,ulppl:1,arnold:1,ant3:1},'「毎回同じで飽きた」不満から、日ごとにテーマが変わる構成を選んだ','「毎回同じで飽きた」不満があり、毎回似たメニューになる組み方は避けた']
+  };
+  comp.forEach(k=>{ if(CP[k]){ ans('complaint',k); add(CP[k][0],CP[k][1],CP[k][2],'不満'); } });
+
+  // 集計
+  const scores = eligible.map(s=>({s, raw:contrib[s].reduce((t,c)=>t+c.v,0)}))
+    .sort((x,y)=>(y.raw-x.raw)||(FIT[y.s][d]-FIT[x.s][d]));
+  scores.forEach(o=>o.pct=Math.max(5,Math.min(98,Math.round(38+o.raw*2.4))));
+  return {d, scores, contrib, lowRecovery};
+}
+
+/* ============================================================
+   スケジュールと種目
+   ============================================================ */
+const SESS = {
+  fbA:['全身A',['バーベルスクワット*','ベンチプレス*','ラットプルダウン','ルーマニアンデッドリフト','ダンベルショルダープレス','ケーブルクランチ','ダンベルカール']],
+  fbB:['全身B',['デッドリフト*','ダンベルインクラインプレス*','シーテッドロウ','ブルガリアンスクワット','サイドレイズ','プランク','トライセプスプレスダウン']],
+  fbC:['全身C',['レッグプレス*','懸垂（アシスト可）*','ディップス','ヒップスラスト','リアレイズ','ハンギングレッグレイズ','ハンマーカール']],
+  upA:['上半身A',['ベンチプレス*','ベントオーバーロウ*','ダンベルショルダープレス','ラットプルダウン','サイドレイズ','ダンベルカール','トライセプスプレスダウン']],
+  upB:['上半身B',['オーバーヘッドプレス*','懸垂（アシスト可）*','ダンベルインクラインプレス','シーテッドロウ','リアレイズ','ハンマーカール','フレンチプレス']],
+  upC:['上半身C',['ダンベルインクラインプレス*','チェストサポーテッドロウ*','ケーブルフライ','ワンハンドロウ','サイドレイズ','インクラインカール','ディップス']],
+  loA:['下半身A',['バーベルスクワット*','ルーマニアンデッドリフト*','レッグプレス','レッグカール','カーフレイズ','ケーブルクランチ','バックエクステンション']],
+  loB:['下半身B',['デッドリフト*','ブルガリアンスクワット*','ヒップスラスト','レッグエクステンション','レッグカール','ハンギングレッグレイズ','カーフレイズ']],
+  loC:['下半身C',['フロントスクワット*','ヒップスラスト*','ウォーキングランジ','シーテッドレッグカール','アブダクション','アブローラー','カーフレイズ']],
+  push:['プッシュ',['ベンチプレス*','オーバーヘッドプレス*','ダンベルインクラインプレス','サイドレイズ','ケーブルフライ','トライセプスプレスダウン','フレンチプレス']],
+  pull:['プル',['デッドリフト*','懸垂（アシスト可）*','ベントオーバーロウ','シーテッドロウ','リアレイズ','ダンベルカール','ハンマーカール']],
+  legs:['レッグ',['バーベルスクワット*','ルーマニアンデッドリフト*','レッグプレス','ブルガリアンスクワット','レッグカール','カーフレイズ','ハンギングレッグレイズ']],
+  chest:['胸',['ベンチプレス*','ダンベルインクラインプレス*','ディップス','ケーブルフライ','ペックデック','腕立て伏せ（限界まで）','ケーブルクランチ']],
+  back:['背中',['デッドリフト*','懸垂（アシスト可）*','ベントオーバーロウ','ラットプルダウン','シーテッドロウ','ストレートアームプルダウン','バックエクステンション']],
+  shoulder:['肩',['オーバーヘッドプレス*','サイドレイズ*','ダンベルショルダープレス','リアレイズ','ケーブルサイドレイズ','フェイスプル','シュラッグ']],
+  arms:['腕',['ナローベンチプレス*','バーベルカール*','フレンチプレス','インクラインカール','トライセプスプレスダウン','ハンマーカール','アブローラー']],
+  chestTri:['胸＋三頭',['ベンチプレス*','ダンベルインクラインプレス*','ケーブルフライ','ディップス','トライセプスプレスダウン','フレンチプレス','ケーブルクランチ']],
+  backBi:['背中＋二頭',['デッドリフト*','懸垂（アシスト可）*','ベントオーバーロウ','シーテッドロウ','バーベルカール','インクラインカール','ハンマーカール']],
+  shoulderArm:['肩＋腕',['オーバーヘッドプレス*','サイドレイズ*','リアレイズ','バーベルカール','トライセプスプレスダウン','ハンマーカール','アブローラー']],
+  gluteA:['お尻重視',['ヒップスラスト*','ルーマニアンデッドリフト*','ブルガリアンスクワット','ケーブルキックバック','アブダクション','レッグカール','プランク']],
+  gluteB:['お尻＋ハム',['スモウデッドリフト*','ブルガリアンスクワット*','ステップアップ','グルートブリッジ（片脚）','シーテッドレッグカール','45度バックエクステンション','アブローラー']],
+  upGlute:['上半身＋お尻',['ダンベルショルダープレス*','ラットプルダウン*','ヒップスラスト','シーテッドロウ','サイドレイズ','アブダクション','プランク']],
+  core:['お尻・体幹',['ヒップスラスト*','ケーブルキックバック','アブダクション','デッドバグ','パロフプレス','サイドプランク','カーフレイズ']],
+  chestBack:['胸＋背中',['ベンチプレス*','懸垂（アシスト可）*','ダンベルインクラインプレス','ベントオーバーロウ','ケーブルフライ','シーテッドロウ','ストレートアームプルダウン']],
+  arnSA:['肩＋腕',['オーバーヘッドプレス*','バーベルカール*','サイドレイズ','フレンチプレス','リアレイズ','インクラインカール','トライセプスプレスダウン']],
+  chestBi:['胸＋二頭',['ベンチプレス*','ダンベルインクラインプレス*','バーベルカール','ケーブルフライ','インクラインカール','ペックデック','ハンマーカール']],
+  backTri:['背中＋三頭',['デッドリフト*','懸垂（アシスト可）*','ベントオーバーロウ','ナローベンチプレス','シーテッドロウ','フレンチプレス','トライセプスプレスダウン']],
+  shoulderLegs:['肩＋脚',['バーベルスクワット*','オーバーヘッドプレス*','ルーマニアンデッドリフト','サイドレイズ','レッグプレス','リアレイズ','レッグカール']],
+  weak:['弱点強化',null]
+};
+const WEAK_LIB = {chest:['ダンベルインクラインプレス*','ケーブルフライ'],back:['懸垂（アシスト可）*','ワンハンドロウ'],shoulder:['サイドレイズ*','リアレイズ'],arm:['インクラインカール','フレンチプレス'],legs:['ハックスクワット*','レッグカール'],glute:['ヒップスラスト*','ケーブルキックバック'],abs:['アブローラー','ハンギングレッグレイズ']};
+const TPL = {
+  fb:{1:['fbA'],2:['fbA','fbB'],3:['fbA','fbB','fbC'],4:['fbA','fbB','fbC','fbA'],5:['fbA','fbB','fbC','fbA','fbB'],6:['fbA','fbB','fbC','fbA','fbB','fbC']},
+  fbul:{3:['fbA','upA','loA'],4:['upA','loA','fbB','fbC']},
+  ul:{2:['upA','loA'],3:['upA','loA','upB'],4:['upA','loA','upB','loB'],5:['upA','loA','upB','loB','weak'],6:['upA','loA','upB','loB','upC','loC']},
+  ppl:{3:['push','pull','legs'],4:['push','pull','legs','push'],5:['push','pull','legs','push','pull'],6:['push','pull','legs','push','pull','legs']},
+  ulppl:{5:['upA','loA','push','pull','legs'],6:['upA','loA','push','pull','legs','weak']},
+  bro:{4:['chestTri','backBi','legs','shoulderArm'],5:['chest','back','legs','shoulder','arms'],6:['chest','back','legs','shoulder','arms','loB']},
+  arnold:{3:['chestBack','arnSA','legs'],4:['chestBack','arnSA','legs','chestBack'],5:['chestBack','arnSA','legs','chestBack','arnSA'],6:['chestBack','arnSA','legs','chestBack','arnSA','legs']},
+  ant3:{3:['chestBi','backTri','shoulderLegs'],4:['chestBi','backTri','shoulderLegs','chestBi'],5:['chestBi','backTri','shoulderLegs','chestBi','backTri'],6:['chestBi','backTri','shoulderLegs','chestBi','backTri','shoulderLegs']},
+  ant4:{4:['chestBi','backTri','shoulder','legs'],5:['chestBi','backTri','shoulder','legs','chestBi'],6:['chestBi','backTri','shoulder','legs','chestBi','backTri']},
+  glute:{3:['gluteA','upA','gluteB'],4:['gluteA','upA','loA','upGlute'],5:['gluteA','upA','gluteB','upB','core']}
+};
+const TPL_NOTE = {
+  'ul-3':'週3回の上下分割は「上・下・上」と「下・上・下」を週ごとに交互に回します。',
+  'ppl-3':'週3回のPPLは各部位が週1回になるため、1回のセット数を多めに取ります。',
+  'ppl-4':'週4〜5回のPPLは曜日に関係なく「プッシュ→プル→レッグ」の順番で回し続けます。',
+  'ppl-5':'週4〜5回のPPLは曜日に関係なく「プッシュ→プル→レッグ」の順番で回し続けます。',
+  'arnold-3':'週3回のアーノルドスプリットは各部位が週1回になるため、1回のセット数を多めに取ります。胸と背中は交互に行うスーパーセットにすると時間を短縮できます。',
+  'arnold-4':'週4〜5回のアーノルドスプリットは曜日に関係なく「胸背中→肩腕→脚」の順番で回し続けます。',
+  'arnold-5':'週4〜5回のアーノルドスプリットは曜日に関係なく「胸背中→肩腕→脚」の順番で回し続けます。',
+  'arnold-6':'胸と背中は1種目ずつ交互に行うスーパーセットにすると、セット間の休憩を有効に使えます。',
+  'ant3-3':'週3回だと各部位が週1回になるため、1回のセット数を多めに取ります。胸と二頭、背中と三頭はスーパーセットでも組めます。',
+  'ant3-4':'曜日に関係なく「胸二頭→背中三頭→肩脚」の順番で回し続けます。',
+  'ant3-5':'曜日に関係なく「胸二頭→背中三頭→肩脚」の順番で回し続けます。',
+  'ant4-5':'曜日に関係なく「胸二頭→背中三頭→肩→脚」の順番で回し続けます。',
+  'ant4-6':'曜日に関係なく「胸二頭→背中三頭→肩→脚」の順番で回し続けます。',
+  'fb-4':'全身法を週4回以上行う場合は、毎回のセット数を少なめにして疲労をためないようにします。',
+  'fb-5':'全身法を週4回以上行う場合は、毎回のセット数を少なめにして疲労をためないようにします。',
+  'fb-6':'全身法を週4回以上行う場合は、毎回のセット数を少なめにして疲労をためないようにします。'
+};
+const DAY_SLOTS = {1:[2],2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5]};
+const WD = ['月','火','水','木','金','土','日'];
+const SUB = {
+  back:{'デッドリフト':'ヒップスラスト','スモウデッドリフト':'ヒップスラスト','バーベルスクワット':'レッグプレス','フロントスクワット':'ハックスクワット','ベントオーバーロウ':'チェストサポーテッドロウ','ルーマニアンデッドリフト':'シーテッドレッグカール','バックエクステンション':'デッドバグ','45度バックエクステンション':'デッドバグ','シュラッグ':'フェイスプル'},
+  shoulder:{'ベンチプレス':'ダンベルベンチプレス（ニュートラル）','オーバーヘッドプレス':'ランドマインプレス','ダンベルショルダープレス':'ランドマインプレス','ディップス':'ケーブルプレスダウン','懸垂（アシスト可）':'ラットプルダウン（ニュートラル）','ナローベンチプレス':'ケーブルプレスダウン'},
+  knee:{'バーベルスクワット':'ボックススクワット（浅め）','フロントスクワット':'ボックススクワット（浅め）','ブルガリアンスクワット':'ヒップスラスト','ウォーキングランジ':'ケーブルプルスルー','レッグエクステンション':'レッグカール','ステップアップ':'グルートブリッジ','ハックスクワット':'レッグプレス（浅め）'},
+  elbow:{'バーベルカール':'EZバーカール','フレンチプレス':'ロープ・プレスダウン','ナローベンチプレス':'ケーブルプレスダウン','ディップス':'ケーブルプレスダウン'}
+};
+function prescription(a){
+  const g=a.goal, novice = a.exp==='0'||a.exp==='lt6m', short = a.time==='30';
+  const R = {strength:['3〜5回','8〜10回'],hyper:['6〜10回','10〜15回'],sport:['3〜6回（素早く）','8〜12回'],glute:['8〜12回','12〜20回']}[g] || ['8〜12回','12〜15回'];
+  const mainSets = short||novice ? '3' : '3〜4';
+  const accSets = short ? '2' : (novice?'2〜3':'3');
+  return {main:`${mainSets} × ${R[0]}`, acc:`${accSets} × ${R[1]}`};
+}
+function buildSession(key,a){
+  let [label,list] = SESS[key];
+  if(!list){
+    const p = (a.prio||[]).filter(x=>x!=='none');
+    const parts = p.length? p : ['shoulder','arm'];
+    list=[]; parts.forEach(x=>list.push(...(WEAK_LIB[x]||[])));
+    if(list.length<5) list.push('サイドレイズ','フェイスプル','ハンマーカール','アブローラー');
+  }
+  const n = {'30':3,'45':4,'60':5,'90':6,'120':7}[a.time];
+  const inj = (a.injury||[]).filter(x=>x!=='none');
+  const rx = prescription(a);
+  const out=[]; const seen=new Set();
+  for(const raw of list){
+    if(out.length>=n) break;
+    const main = raw.endsWith('*'); let name = raw.replace('*','');
+    let subbed=false;
+    for(const k of inj){ if(SUB[k] && SUB[k][name]){ name=SUB[k][name]; subbed=true; } }
+    if(seen.has(name)) continue; seen.add(name);
+    out.push({name, main, subbed, sr: main?rx.main:rx.acc});
+  }
+  return {label, ex:out};
+}
+function weekPlan(split,a){
+  const d = Math.min(Number(a.days),6);
+  const keys = TPL[split][d];
+  let slots = DAY_SLOTS[d];
+  if(d===4 && (a.recConsec==='hard' || a.restPref==='two')) slots=[0,2,4,6];
+  const week = WD.map((w,i)=>({w, key:null}));
+  keys.forEach((k,i)=>{ week[slots[i]].key=k; });
+  return {week, keys, note: TPL_NOTE[`${split}-${d}`]||''};
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const state = {step:-1, a:{prio:[],injury:[],quit:[],memo:''}};
+const $app = document.getElementById('app'), $rail=document.getElementById('rail');
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const STEP_NAMES = QUESTIONS.map(q=>q.title).concat('診断結果');
+
+function stepComplete(i){ return QUESTIONS[i].items.every(it=>!isRequired(it) || filled(it.id)); }
+function filled(id){ const v=state.a[id]; return Array.isArray(v)? v.length>0 : v!==undefined && v!==''; }
+function allComplete(){ return QUESTIONS.every((_,i)=>stepComplete(i)); }
+
+function renderRail(){
+  $rail.innerHTML = STEP_NAMES.map((n,i)=>{
+    const reachable = i===0 || (i<=QUESTIONS.length && QUESTIONS.slice(0,i).every((_,j)=>stepComplete(j)));
+    const on = state.step>=i;
+    return `<button type="button" class="${on?'on':''} ${state.step===i?'cur':''}" ${reachable&&state.step>=0?'':'disabled'} data-go="${i}"><span class="bar"></span>${i+1}. ${n}</button>`;
+  }).join('');
+}
+$rail.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(!b||b.disabled) return; go(Number(b.dataset.go)); });
+
+function go(i){ state.step=i; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+function render(){
+  renderRail();
+  if(state.step<0) return renderIntro();
+  if(state.step>=QUESTIONS.length) return renderResult();
+  const Q = QUESTIONS[state.step];
+  let html = `<section class="panel step-anim"><h2>${esc(Q.title)}</h2>`;
+  for(const it of Q.items){
+    if(!isVisible(it)) continue;
+    html += `<div class="q" role="group" aria-labelledby="l-${it.id}"><span class="t" id="l-${it.id}">${esc(it.t)}${isRequired(it)||it.type==='short'?'':'<span style="font-weight:400;color:var(--muted)">（任意）</span>'}</span>`;
+    if(it.hint) html += `<p class="hint">${esc(it.hint)}</p>`;
+    if(it.type==='cal'){
+      html += `<div id="calBox"></div>`;
+    } else if(it.type==='sets'){
+      const v=state.a.sets||{};
+      const cell=k=>`<td><input type="number" inputmode="numeric" min="0" max="99" class="setin" id="f-sets-${k}" data-k="${k}" value="${esc(v[k]??'')}" aria-label="${k}"></td>`;
+      html += `<div class="setwrap"><table class="settable"><thead><tr><th></th><th>フリーウエイト</th><th>マシン・ケーブル</th><th>自重</th></tr></thead><tbody>
+        <tr><th>コンパウンド<small>多関節</small></th>${SET_KEYS[0].map(cell).join('')}</tr>
+        <tr><th>アイソレーション<small>単関節</small></th>${SET_KEYS[1].map(cell).join('')}</tr>
+      </tbody></table></div><p class="settotal" id="setTotal">${esc(setsText(state.a))}</p>`;
+    } else if(it.type==='short'){
+      html += `<input type="text" class="short" id="f-${it.id}" data-id="${it.id}" placeholder="${esc(it.placeholder||'')}" value="${esc(state.a[it.id]||'')}">`;
+    } else if(it.type==='text'){
+      html += `<textarea id="f-${it.id}" placeholder="例：以前は胸ばかり鍛えていた。デスクワークで猫背気味。自宅にダンベル（〜20kg）があり、週末はジムに行ける。">${esc(state.a[it.id]||'')}</textarea>`;
+    } else {
+      html += `<div class="chips ${it.cls||''}">`;
+      for(const o of it.opts){
+        const v=o[0]; const cur = state.a[it.id];
+        const pressed = it.type==='multi' ? (cur||[]).includes(v) : cur===v;
+        html += `<button type="button" class="chip" id="c-${it.id}-${v}" data-id="${it.id}" data-v="${v}" data-type="${it.type}" aria-pressed="${pressed}">${esc(o[1])}${o[2]?`<small>${esc(o[2])}</small>`:''}</button>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  const last = state.step===QUESTIONS.length-1;
+  html += `<p class="err" id="err"></p><div class="nav">
+    <button type="button" class="btn ghost" id="back">${state.step===0?'はじめに戻る':'戻る'}</button>
+    <button type="button" class="btn" id="next">${last?'診断する':'次へ'}</button></div></section>`;
+  $app.innerHTML = html;
+  $app.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',onChip));
+  const ta = $app.querySelector('textarea'); if(ta) ta.addEventListener('input',e=>state.a.memo=e.target.value);
+  if(document.getElementById('calBox')) renderCal();
+  $app.querySelectorAll('input.setin').forEach(inp=>inp.addEventListener('input',e=>{ state.a.sets=state.a.sets||{}; state.a.sets[e.target.dataset.k]=e.target.value; const t=document.getElementById('setTotal'); if(t) t.textContent=setsText(state.a); }));
+  $app.querySelectorAll('input.short').forEach(inp=>inp.addEventListener('input',e=>state.a[e.target.dataset.id]=e.target.value.trim()));
+  document.getElementById('back').onclick=()=>go(state.step-1);
+  document.getElementById('next').onclick=()=>{
+    if(!stepComplete(state.step)){
+      const missing = QUESTIONS[state.step].items.filter(it=>isRequired(it)&&!filled(it.id)).map(it=>`「${it.t}」`);
+      document.getElementById('err').textContent = `${missing.join('')}を選んでください。`;
+      return;
+    }
+    go(state.step+1);
+  };
+}
+function onChip(e){
+  const b=e.currentTarget, id=b.dataset.id, type=b.dataset.type;
+  let v=b.dataset.v; if(id==='days') v=Number(v);
+  if(type==='multi'){
+    let arr = state.a[id]||[];
+    const exclusive = ['none','never','nothing'];
+    if(exclusive.includes(v)) arr = arr.includes(v)?[]:[v];
+    else { arr = arr.filter(x=>!exclusive.includes(x)); arr = arr.includes(v)?arr.filter(x=>x!==v):arr.concat(v); }
+    state.a[id]=arr;
+    b.parentElement.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', arr.includes(c.dataset.v)));
+  } else {
+    state.a[id]=v;
+    b.parentElement.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', c===b));
+  }
+  const err=document.getElementById('err'); if(err) err.textContent='';
+  if(id==='sportNow'||id==='usedSplit'){ const y=window.scrollY; render(); window.scrollTo(0,y); const f=document.getElementById(`c-${id}-${v}`); if(f) f.focus(); return; }
+  renderRail();
+}
+
+let calSel=0;
+function renderCal(){
+  const box=document.getElementById('calBox'); if(!box) return;
+  const cal=state.a.cal=(state.a.cal||[]); for(let i=0;i<14;i++) cal[i]=cal[i]||[];
+  const usedList=(state.a.usedSplit||[]).filter(x=>SPLITS[x]);
+  const cell=i=>{ const x=cal[i]; return `<button type="button" class="calday ${x.length?'on':''} ${calSel===i?'sel':''}" data-i="${i}" aria-pressed="${calSel===i}" aria-label="${dayName(i)}：${x.length?x.map(k=>PART_NAME[k]).join('・'):'休み'}"><span class="cd">${WD[i%7]}</span><span class="cp">${x.length?x.map(k=>`<i>${PARTS.find(p=>p[0]===k)[2]}</i>`).join(''):'<em>休</em>'}</span></button>`; };
+  const st=calStats(state.a);
+  box.innerHTML = `
+    ${usedList.length?`<div class="calfill">${usedList.map(x=>`<button type="button" class="btn ghost small" data-fill="${x}">${esc(SPLITS[x].name)}の例を入れる</button>`).join('')}<button type="button" class="btn ghost small" data-fill="clear">すべて休みに戻す</button></div>`:''}
+    <div class="calgrid">
+      <span class="wk">第1週</span>${[0,1,2,3,4,5,6].map(cell).join('')}
+      <span class="wk">第2週</span>${[7,8,9,10,11,12,13].map(cell).join('')}
+    </div>
+    <div class="calpal">
+      <p class="calsel">${dayName(calSel)}に鍛えた部位</p>
+      <div class="chips">${PARTS.map(([k,n])=>`<button type="button" class="chip" data-part="${k}" aria-pressed="${cal[calSel].includes(k)}">${n}</button>`).join('')}
+        <button type="button" class="chip" data-part="rest" aria-pressed="${!cal[calSel].length}">休み</button></div>
+      <div class="calnav"><button type="button" class="btn ghost small" data-move="-1" ${calSel===0?'disabled':''}>前の日</button><button type="button" class="btn ghost small" data-move="1" ${calSel===13?'disabled':''}>次の日</button></div>
+    </div>
+    <p class="settotal">${st?`2週間で${st.trained}日（週平均${st.perWeek}回）・最大${st.maxRun}日連続`:'まだ入力されていません（任意）'}</p>`;
+  box.querySelectorAll('.calday').forEach(b=>b.onclick=()=>{ calSel=Number(b.dataset.i); renderCal(); box.querySelector('.calday.sel').focus(); });
+  box.querySelectorAll('[data-part]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.part; let x=cal[calSel];
+    if(k==='rest') x=[]; else x = x.includes(k)? x.filter(y=>y!==k) : x.concat(k);
+    cal[calSel]=PARTS.map(p=>p[0]).filter(p=>x.includes(p)); renderCal();
+    const f=box.querySelector(`[data-part="${k}"]`); if(f) f.focus();
+  });
+  box.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>{ calSel=Math.max(0,Math.min(13,calSel+Number(b.dataset.move))); renderCal(); const f=box.querySelector(`[data-move="${b.dataset.move}"]`); if(f&&!f.disabled) f.focus(); });
+  box.querySelectorAll('[data-fill]').forEach(b=>b.onclick=()=>{
+    const sp=b.dataset.fill;
+    for(let i=0;i<14;i++) cal[i]=[];
+    if(sp!=='clear'){
+      const d=TYPICAL_DAYS[sp]; const keys=TPL[sp][d]; const slots=DAY_SLOTS[d];
+      let n=0;
+      for(let w=0;w<2;w++) slots.forEach(sl=>{ cal[w*7+sl]=[...(SESS_PARTS[keys[n%keys.length]]||[])]; n++; });
+    }
+    renderCal();
+  });
+}
+function renderIntro(){
+  $app.innerHTML = `<section class="panel step-anim">
+    <h2>診断の対象になる10の分割法</h2>
+    <p class="lead">「分割」とは、どの日にどの部位を鍛えるかの組み方です。回答をもとに、下の10種類それぞれの相性を点数化して最適なものを選び、週間スケジュールと種目例まで作成します。</p>
+    <div class="splitlist">${Object.values(SPLITS).map(s=>`<div><b>${esc(s.name)}</b><span>${esc(s.desc)}</span></div>`).join('')}</div>
+    <div class="nav"><span></span><button type="button" class="btn" id="start">診断をはじめる</button></div>
+  </section>`;
+  document.getElementById('start').onclick=()=>go(0);
+}
+
+let lastResult=null;
+function renderResult(){
+  if(!allComplete()){ go(0); return; }
+  const a=state.a, R=evaluate(a);
+  const top=R.scores[0], alt=R.scores[1];
+  const S=SPLITS[top.s];
+  const plan=weekPlan(top.s,a);
+  const altPlan = alt? weekPlan(alt.s,a):null;
+  const c = R.contrib[top.s];
+  const pros = c.filter(x=>x.v>0).sort((x,y)=>y.v-x.v).slice(0,5);
+  const cons = c.filter(x=>x.v<0).sort((x,y)=>x.v-y.v).slice(0,3);
+  const cautions=[];
+  if(Number(a.days)===7) cautions.push('週7回と回答されましたが、最低週1日は完全休養日を入れる前提で週6回のプランにしています。');
+  if(a.time==='120') cautions.push('90分を超えると集中力と質が落ちやすいので、ウォームアップを除いて75分前後を目安にしましょう。');
+  if(sportActive(a) && a.sportFreq==='high' && Number(a.days)>=4) cautions.push(`競技練習が週5回以上あるため、筋トレは週2〜3回に抑え、試合の前日・前々日には脚の日を入れないようにしましょう。`);
+  if(sportActive(a) && a.sportFreq==='mid' && Number(a.days)>=5) cautions.push(`競技練習と合わせると週の運動日がかなり多くなります。疲労が抜けない場合は筋トレを週3〜4回に減らしましょう。`);
+  if(R.lowRecovery) cautions.push('睡眠不足や身体負荷の高い仕事があるため、最初の2週間はセット数を表より1セット少なく始めましょう。');
+  const st=setStats(a);
+  if(usedAny(a) && a.recPast==='not' && st.total>=22) cautions.push(`過去の1回${st.total}セットは回復が追いつかなかった量です。まずは1回${Math.round(st.total*0.7)}セット前後に減らして始め、疲労が抜けるのを確認してから増やしましょう。`);
+  if(usedAny(a) && a.recPast==='not' && st.total>0 && st.total<=12) cautions.push(`過去のセット数（1回${st.total}セット）は多くないのに疲労が抜けなかったため、原因は量よりも睡眠・食事・練習頻度にある可能性があります。`);
+  if(usedAny(a) && a.recPast==='not' && st.compR>=0.6 && st.freeR>=0.6) cautions.push('コンパウンドのフリーウエイト種目が中心で、全身の疲労が大きくなりやすい構成でした。メイン種目は1回2種目までにし、残りはマシンやアイソレーション種目でセット数を稼ぐと回復しやすくなります。');
+  if((a.recSore||[]).includes('back')) cautions.push('背中・腰に疲れが残りやすいため、デッドリフトは週1回までにし、重いスクワットと同じ日に重ねないようにしましょう。');
+  if((a.recSore||[]).includes('chestShoulder')) cautions.push('胸・肩に疲れが残りやすいため、胸を鍛える日と肩を鍛える日の間は1日以上空けましょう。');
+  if(a.recConsec==='hard' && Number(a.days)>=5) cautions.push('連続日がつらい場合、週5回以上では連続日が避けられません。週4回以下にするか、連続日は上半身と下半身のように別の部位を鍛えましょう。');
+  if(a.restPref==='two' && Number(a.days)>=4) cautions.push('2日以上空けたい場合は週3回までが理想です。回数を減らして1回の質を上げることも検討しましょう。');
+  if((a.injury||[]).some(x=>x!=='none')) cautions.push('痛みのある部位に関わる種目は代替種目に置き換えています。痛みが続く場合は医療機関で相談してください。');
+  const uniqKeys=[...new Set(plan.keys)];
+  const sessions = uniqKeys.map(k=>buildSession(k,a));
+  lastResult={top,alt,plan,sessions,pros,cons};
+
+  const freq = FREQ_PER_MUSCLE[top.s](R.d);
+  let html = `<section class="result step-anim">
+    <div class="hero">
+      <span class="kicker">あなたに最適な分割法</span>
+      <span class="en">${esc(S.en)}</span>
+      <h2>${esc(S.name)}</h2>
+      <p>${esc(S.desc)}</p>
+      <div class="metrics">
+        <div><b>${top.pct}</b><span>相性スコア</span></div>
+        <div><b>週${R.d}回</b><span>トレーニング日</span></div>
+        <div><b>${esc(freq)}回</b><span>各部位の刺激／週</span></div>
+      </div>
+    </div>
+
+    <div class="card"><h3>この分割を選んだ理由</h3>
+      <ul class="reasons">
+        ${pros.map(p=>`<li><span class="tag g">${esc(p.label)}</span><span>${esc(p.text)}</span></li>`).join('')}
+        ${cons.map(p=>`<li><span class="tag w">注意</span><span>${esc(p.text)}</span></li>`).join('')}
+        ${cautions.map(t=>`<li><span class="tag w">注意</span><span>${esc(t)}</span></li>`).join('')}
+      </ul>
+    </div>
+
+    ${pastCard(a)}
+    <div class="card"><h3>週間スケジュール例</h3>
+      <div class="weekwrap"><div class="week">${plan.week.map(d=>d.key
+        ?`<div class="day train"><span class="dn">${d.w}</span><span class="sn">${esc(SESS[d.key][0])}</span></div>`
+        :`<div class="day rest"><span class="dn">${d.w}</span><span class="sn">休み</span></div>`).join('')}</div></div>
+      <p class="note">曜日はあくまで例です。トレーニング日が2日以上連続する場合は、同じ部位が続かない順番を守れば入れ替えて構いません。${esc(plan.note)}</p>
+    </div>
+
+    <div class="card"><h3>各日のメニュー例</h3>
+      <div class="sessions">${sessions.map(s=>`<div class="sess"><h4>${esc(s.label)}</h4><table>${s.ex.map(e=>`<tr><td>${e.main?'<span class="main-mark" aria-label="メイン種目"></span>':''}${esc(e.name)}${e.subbed?'<span class="sub">代替</span>':''}</td><td class="sr">${esc(e.sr)}</td></tr>`).join('')}</table></div>`).join('')}</div>
+      <p class="legend"><span class="main-mark"></span>メイン種目（先に行い、重さを伸ばしていく種目）。表記は「セット数×回数」。種目数は1回の時間に合わせています。</p>
+    </div>`;
+
+  if(alt){
+    const A=SPLITS[alt.s];
+    const altPros = R.contrib[alt.s].filter(x=>x.v>0 && !x.base).sort((x,y)=>y.v-x.v).slice(0,2);
+    html += `<div class="card alt"><h3>第2候補：${esc(A.name)}</h3>
+      <p class="why">${esc(A.desc)}</p>
+      ${altPros.length?`<ul class="reasons">${altPros.map(p=>`<li><span class="tag g">${esc(p.label)}</span><span>${esc(p.text)}</span></li>`).join('')}</ul>`:''}
+      <div class="weekwrap" style="margin-top:6px"><div class="week">${altPlan.week.map(d=>d.key
+        ?`<div class="day train"><span class="dn">${d.w}</span><span class="sn">${esc(SESS[d.key][0])}</span></div>`
+        :`<div class="day rest"><span class="dn">${d.w}</span><span class="sn">休み</span></div>`).join('')}</div></div>
+      <p class="note">${altSwitchHint(top.s,alt.s,a)}</p>
+    </div>`;
+  }
+
+  if(alt) html += compareCard(R,top,alt);
+  html += `<div class="card"><h3>分割法ごとの相性</h3><div class="rank">
+    ${R.scores.map((o,i)=>`<div class="row ${i===0?'top':''}"><span>${esc(SPLITS[o.s].name)}</span><div class="track"><div class="fill" style="width:${o.pct}%"></div></div><span class="v">${o.pct}</span></div>`).join('')}
+    </div><p class="note">週${R.d}回で成立しない分割法は表示していません。</p></div>
+
+    <div class="card ai" id="aiCard"><h3>AIトレーナーに相談する</h3>
+      <p class="note" style="margin-top:0" id="aiLead">あなたの回答と診断結果をまとめた相談文をコピーできます。ChatGPT・Claude・Geminiなど、普段使っているAIに貼り付けて送ると、${a.memo?'自由記述のヒアリング内容も踏まえた':''}あなた向けの補足アドバイスと最初の4週間の進め方が返ってきます。</p>
+      <div class="row-actions" style="margin-top:12px">
+        <button type="button" class="btn hidden" id="aiBtn">AIコメントを作成</button>
+        <button type="button" class="btn" id="promptCopy">相談文をコピー</button>
+      </div>
+      <textarea class="hidden" id="promptBox" readonly aria-label="相談文" style="margin-top:12px;min-height:180px"></textarea>
+      <div class="ai-out" id="aiOut" aria-live="polite"></div>
+    </div>
+
+    <div class="row-actions">
+      <button type="button" class="btn ghost" id="edit">回答を修正する</button>
+      <button type="button" class="btn ghost" id="copy">結果をテキストでコピー</button>
+      <button type="button" class="btn ghost" id="restart">最初からやり直す</button>
+    </div>
+    <p class="disclaimer">この診断は一般的なトレーニング理論にもとづく目安です。持病や強い痛みがある方は、医師や専門家に相談してから始めてください。</p>
+  </section>`;
+  $app.innerHTML=html;
+  document.getElementById('edit').onclick=()=>go(0);
+  document.getElementById('restart').onclick=()=>{state.a={prio:[],injury:[],quit:[],memo:''}; go(-1);};
+  document.getElementById('copy').onclick=async e=>{
+    try{ await navigator.clipboard.writeText(resultText()); e.target.textContent='コピーしました'; }
+    catch{ e.target.textContent='コピーできませんでした'; }
+  };
+  setupAI();
+}
+function compareCard(R,top,alt){
+  const byAns = sp => { const m={}; R.contrib[sp].forEach(c=>{ const k=c.ans||c.label; (m[k]=m[k]||{v:0,items:[]}); m[k].v+=c.v; m[k].items.push(c); }); return m; };
+  const g1=byAns(top.s), g2=byAns(alt.s);
+  const keys=[...new Set([...Object.keys(g1),...Object.keys(g2)])];
+  const n1=SPLITS[top.s].name, n2=SPLITS[alt.s].name, gap=top.raw-alt.raw;
+  const rows=keys.map(k=>{
+    const A=g1[k]||{v:0,items:[]}, B=g2[k]||{v:0,items:[]}, diff=A.v-B.v;
+    const favTop = diff>0;
+    const pool = favTop ? [...A.items.filter(x=>x.v>0).map(x=>({...x,who:'top'})),...B.items.filter(x=>x.v<0).map(x=>({...x,who:'alt'}))]
+                        : [...B.items.filter(x=>x.v>0).map(x=>({...x,who:'alt'})),...A.items.filter(x=>x.v<0).map(x=>({...x,who:'top'}))];
+    pool.sort((x,y)=>Math.abs(y.v)-Math.abs(x.v));
+    const c=pool[0];
+    let why='';
+    if(c){
+      if(favTop) why = c.who==='top' ? `${n1}に向いている理由：${c.text}` : `${n2}が不利になった理由：${c.text}`;
+      else why = c.who==='alt' ? `${n2}に向いている理由：${c.text}` : `${n1}が不利になった理由：${c.text}`;
+    }
+    return {k,diff,why,flip: favTop && diff>=gap && gap>0};
+  });
+  const forTop=rows.filter(r=>r.diff>0).sort((x,y)=>y.diff-x.diff);
+  const forAlt=rows.filter(r=>r.diff<0).sort((x,y)=>x.diff-y.diff);
+  const same=rows.filter(r=>r.diff===0);
+  const strength = d => { const x=Math.abs(d); return x>=4?'強く影響':x>=2?'影響':'少し影響'; };
+  const flips=forTop.filter(r=>r.flip);
+  const keyAns=(flips.length?flips:forTop).slice(0,2);
+  let lead;
+  if(gap===0) lead=`<b>${esc(n1)}</b>と<b>${esc(n2)}</b>は、あなたの回答全体で見るとほぼ互角でした。最後は<b>「週${R.d}回」</b>という頻度により合う${esc(n1)}を1位にしています。`;
+  else lead=`<b>${esc(n1)}</b>と<b>${esc(n2)}</b>の順位を分けたのは、あなたの${keyAns.map(r=>`<b>「${esc(r.k)}」</b>`).join('と')}という回答です。`;
+  const item = (r,cls,badge) => `<li class="ans-item ${cls}"><div class="ans-head"><span class="ans-chip">${esc(r.k)}</span>${badge?`<span class="ans-badge">${badge}</span>`:''}<span class="ans-str">${strength(r.diff)}</span></div><p class="ans-why">${esc(r.why)}</p></li>`;
+  let foot='';
+  if(flips.length && gap>0) foot = `${flips.map(r=>`「${esc(r.k)}」`).join('や')}の回答が違っていたら、${esc(n2)}が1位になっていた可能性があります。`;
+  else if(gap>0) foot = `1つの回答だけで決まったわけではなく、上の回答が積み重なって${esc(n1)}が上回りました。`;
+  return `<div class="card"><h3>1位と2位を分けたあなたの回答</h3>
+    <p class="cmp-sum">${lead}</p>
+    ${forTop.length?`<h4 class="ans-h">${esc(n1)}（1位）を後押しした回答</h4><ul class="ans-list">${forTop.map(r=>item(r,'top',r.flip?'決め手':'')).join('')}</ul>`:''}
+    ${forAlt.length?`<h4 class="ans-h">${esc(n2)}（2位）に有利だった回答</h4><ul class="ans-list">${forAlt.map(r=>item(r,'alt','')).join('')}</ul>`:''}
+    ${same.length?`<h4 class="ans-h">どちらにも同じように影響した回答</h4><div class="ans-same">${same.map(r=>`<span class="ans-chip plain">${esc(r.k)}</span>`).join('')}</div>`:''}
+    ${foot?`<p class="note">${foot}</p>`:''}
+  </div>`;
+}
+function pastCard(a){
+  const st = usedAny(a) ? calStats(a) : null; if(!st) return '';
+  const lead = a.recPast==='not' && st.issues.length ? '疲労が抜けなかった原因として、次の点が考えられます。'
+    : st.issues.length ? '入力されたルーティンから気づいた点です。' : '各部位を無理のない間隔で鍛えられていました。';
+  return `<div class="card"><h3>過去のルーティンの振り返り</h3>
+    ${[0,1].map(w=>`<p class="note" style="margin:${w?'10px':'0'} 0 6px;font-weight:700">第${w+1}週</p><div class="weekwrap"><div class="week">${(a.cal||[]).slice(w*7,w*7+7).map((x,i)=>`<div class="day ${x&&x.length?'train':'rest'}"><span class="dn">${WD[i]}</span><span class="sn">${x&&x.length?x.map(k=>PART_NAME[k]).join('・'):'休み'}</span></div>`).join('')}</div></div>`).join('')}
+    <p class="note">2週間で${st.trained}日（週平均${st.perWeek}回）、最大${st.maxRun}日連続。部位ごとの頻度（週あたり）は次のとおりです。</p>
+    <div class="freqrows">${PARTS.map(([k,n])=>`<div class="row"><span>${n}</span><div class="track"><div class="fill" style="width:${Math.min(100,st.freq[k]/3*100)}%"></div></div><span class="v">週${st.freq[k]}回</span></div>`).join('')}</div>
+    <p style="margin-top:12px;font-size:15px">${lead}</p>
+    ${st.issues.length?`<ul class="reasons" style="margin-top:10px">${st.issues.slice(0,6).map(x=>`<li><span class="tag w">${{same:'連日',syn:'協働筋',low:'頻度',run:'連続'}[x.kind]}</span><span>${esc(x.text)}</span></li>`).join('')}</ul>`:''}
+  </div>`;
+}
+function altSwitchHint(top,alt,a){
+  if(SPLITS[alt].name && ['fb','fbul'].includes(alt)) return '忙しい時期や疲れがたまっている時期は、こちらに切り替えると無理なく続けられます。';
+  if(['ppl','ulppl','bro','arnold','ant3','ant4'].includes(alt)) return 'メインのプランを3か月ほど続けて伸びが鈍ってきたら、こちらに切り替えて刺激を変えるのがおすすめです。';
+  return '生活リズムや目標が変わったときの切り替え先として使えます。';
+}
+const ANS_NAME = {recPast:'過去の分割の回復',recSore:'疲れが残りやすい部位',recConsec:'連続日の調子',restPref:'休養の取り方',days:'週の回数',time:'1回の時間',goal:'目標',exp:'筋トレ歴',age:'年齢',prio:'鍛えたい部位',sport:'競技歴',sportNow:'現在の競技',sportFreq:'競技の練習頻度',variety:'同じメニューの繰り返し',sched:'予定の立ち方',synergy:'協働筋の疲労',focus:'好きな鍛え方',sleep:'睡眠',work:'仕事の身体負荷',quit:'続かなかった理由',complaint:'分割への不満',usedSplit:'使っていた分割'};
+function ansLabel(id,v){ return `${ANS_NAME[id]||id}：${labelOf(id,v)}`; }
+function labelOf(id,v){
+  for(const Q of QUESTIONS) for(const it of Q.items) if(it.id===id){
+    if(Array.isArray(v)) return v.map(x=>(it.opts.find(o=>String(o[0])===String(x))||[,x])[1]).join('、');
+    const o=it.opts&&it.opts.find(o=>String(o[0])===String(v)); return o?o[1]:v;
+  }
+  return v;
+}
+function answersText(){
+  const a=state.a; const lines=[];
+  for(const Q of QUESTIONS) for(const it of Q.items){
+    if(it.id==='memo' || !isVisible(it) || it.type==='short') continue;
+    if(it.type==='sets'){ lines.push(`${it.t}：${setsText(a)}`); continue; }
+    if(it.type==='cal'){ if(calStats(a)) lines.push(`過去のルーティン（2週間）：${calText(a)}`); continue; }
+    lines.push(`${it.t}：${labelOf(it.id,a[it.id])}`);
+  }
+  if(sportAny(a) && a.sportName) lines.push(`競技名：${a.sportName}`);
+  if(a.memo) lines.push(`自由記述ヒアリング：${a.memo}`);
+  return lines.join('\n');
+}
+function resultText(){
+  const r=lastResult; if(!r) return '';
+  const S=SPLITS[r.top.s];
+  let t=`【トレーニング分割診断】\n最適な分割法：${S.name}（相性スコア${r.top.pct}）\n`;
+  t+=`週間スケジュール：${r.plan.week.map(d=>`${d.w} ${d.key?SESS[d.key][0]:'休み'}`).join(' / ')}\n\n理由：\n${r.pros.map(p=>'・'+p.text).join('\n')}\n\nメニュー例：\n`;
+  r.sessions.forEach(s=>{ t+=`■${s.label}\n${s.ex.map(e=>`・${e.name} ${e.sr}`).join('\n')}\n`; });
+  if(r.alt) t+=`\n第2候補：${SPLITS[r.alt.s].name}`;
+  return t;
+}
+
+/* ---------- AIコメント（sample capability） ---------- */
+let samplePromise = null;
+if(window.claude && typeof window.claude.use==='function'){ samplePromise = window.claude.use('sample').catch(()=>null); }
+function buildPrompt(){
+  const r=lastResult;
+  return `あなたは経験豊富なパーソナルトレーナーです。以下はトレーニング分割診断アプリのユーザーの回答と、スコアリングで決まった診断結果です。このユーザー本人に向けて、日本語で個別アドバイスを書いてください。
+
+# 回答
+${answersText()}
+
+# 診断結果
+最適な分割法：${SPLITS[r.top.s].name}
+第2候補：${r.alt?SPLITS[r.alt.s].name:'なし'}
+週間スケジュール：${r.plan.week.map(d=>`${d.w}=${d.key?SESS[d.key][0]:'休み'}`).join('、')}
+主な理由：${r.pros.map(p=>p.text).join(' / ')}
+
+# 書き方
+- 次の3つの見出しを【】で付けて書く：【あなたに合う理由】【ヒアリングからの調整ポイント】【最初の4週間の進め方】
+- 【ヒアリングからの調整ポイント】では、自由記述の内容（器具・生活・過去の経験など）や過去のルーティンがあれば具体的に反映する。なければ挫折理由や性格から続けるコツを書く。
+- 自由記述の内容から、診断結果と別の分割法の方が明らかに合うと判断できる場合は、その旨と理由を一言添える。
+- 医療的な診断はしない。痛みについては無理をせず医療機関への相談を勧める程度にとどめる。
+- 合計400〜500字。Markdown記号（#、*、-）は使わず、プレーンテキストで。`;
+}
+async function setupAI(){
+  const copyBtn=document.getElementById('promptCopy'), box=document.getElementById('promptBox');
+  if(copyBtn) copyBtn.onclick=async()=>{
+    const text=buildPrompt();
+    try{ await navigator.clipboard.writeText(text); copyBtn.textContent='コピーしました。AIに貼り付けて送ってください'; }
+    catch{ box.value=text; box.classList.remove('hidden'); box.focus(); box.select(); copyBtn.textContent='下の文章を選択してコピーしてください'; }
+  };
+  if(!samplePromise) return;
+  const sample = await samplePromise;
+  const card=document.getElementById('aiCard'); if(!sample||!card) return;
+  const btn=document.getElementById('aiBtn'), out=document.getElementById('aiOut');
+  btn.classList.remove('hidden'); copyBtn.classList.remove('btn'); copyBtn.classList.add('btn','ghost');
+  document.getElementById('aiLead').textContent='「AIコメントを作成」を押すと、この画面でClaudeがあなた向けの補足アドバイスと最初の4週間の進め方を作成します。ほかのAIに相談したい場合は、相談文をコピーして貼り付けてください。';
+  btn.onclick=async()=>{
+    btn.disabled=true; btn.textContent='作成中…'; out.textContent='';
+    try{
+      const res = await sample(buildPrompt(),{onText:({text})=>{out.textContent=text;}});
+      out.textContent=res.text;
+      btn.textContent='もう一度作成';
+    }catch(err){
+      if(err&&err.code==='not_granted'){ btn.classList.add('hidden'); return; }
+      out.textContent = err&&err.code==='rate_limited' ? '混み合っています。少し時間をおいてからもう一度お試しください。' : 'コメントを作成できませんでした。時間をおいてもう一度お試しください。';
+      btn.textContent='再試行';
+    }finally{ btn.disabled=false; }
+  };
+}
+
+render();
+</script>
+</body>
+</html>
